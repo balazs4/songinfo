@@ -1,0 +1,23 @@
+{
+  "name": "songinfo",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "micro index.js -p ${PORT}"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/balazs4/songinfo.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/balazs4/songinfo/issues"
+  },
+  "homepage": "https://github.com/balazs4/songinfo#readme",
+  "dependencies": {
+    "micro": "^7.3.3"
+  }
+}
