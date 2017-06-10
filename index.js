@@ -1,4 +1,5 @@
 const { send } = require('micro');
+const { encode } = require('node-base64-image');
 const request = require('request-promise-native');
 const log = require('debug')('songinfo');
 
@@ -55,6 +56,17 @@ const search = term =>
     `https://api.spotify.com/v1/search?type=track&market=DE&limit=1&q=${term.replace(/\s/g, '+')}`
   );
 
+const to64 = url =>
+  new Promise(resolve => {
+    encode(url, { string: true }, (err, base64) => {
+      if (err) {
+        log(err);
+        resolve(undefined);
+      }
+      resolve(base64);
+    });
+  });
+
 module.exports = async (req, res) => {
   currentToken = await getAccesToken();
   if (currentToken === null) {
@@ -63,7 +75,6 @@ module.exports = async (req, res) => {
   }
 
   const term = req.url.replace(/\//, '');
-  log(`Looking for ${term}`);
 
   const result = await search(term);
 
@@ -81,13 +92,15 @@ module.exports = async (req, res) => {
 
   const { artists, album, name, external_urls } = item;
   const { body: { release_date } } = await spoitfy(album.href);
+  const cover64 = await to64(album.images[0].url);
 
   return {
     artist: artists[0].name,
     album: album.name,
-    images: album.images[0].url,
     title: name,
     release_date,
-    external_urls
+    external_urls,
+    cover: album.images[0].url,
+    cover64
   };
 };
