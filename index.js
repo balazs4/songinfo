@@ -37,6 +37,24 @@ const getAccesToken = () => {
   });
 };
 
+const spoitfy = url => {
+  const { token_type, access_token } = currentToken;
+  return request(url, {
+    method: 'GET',
+    json: true,
+    resolveWithFullResponse: true,
+    simple: false,
+    headers: {
+      Authorization: `${token_type} ${access_token}`
+    }
+  });
+};
+
+const search = term =>
+  spoitfy(
+    `https://api.spotify.com/v1/search?type=track&market=DE&limit=1&q=${term.replace(/\s/g, '+')}`
+  );
+
 module.exports = async (req, res) => {
   currentToken = await getAccesToken();
   if (currentToken === null) {
@@ -44,24 +62,10 @@ module.exports = async (req, res) => {
     return;
   }
 
-  const { token_type, access_token } = currentToken;
-
   const term = req.url.replace(/\//, '');
-
   log(`Looking for ${term}`);
 
-  const result = await request(
-    `https://api.spotify.com/v1/search?type=track&market=DE&limit=1&q=${term.replace(/\s/g, '+')}`,
-    {
-      method: 'GET',
-      json: true,
-      resolveWithFullResponse: true,
-      simple: false,
-      headers: {
-        Authorization: `${token_type} ${access_token}`
-      }
-    }
-  );
+  const result = await search(term);
 
   if (result.statusCode !== 200) {
     send(res, 500, 'Remote server error');
@@ -75,21 +79,15 @@ module.exports = async (req, res) => {
     return;
   }
 
-  const { body: { release_date } } = await request(item.album.href, {
-    method: 'GET',
-    json: true,
-    resolveWithFullResponse: true,
-    simple: false,
-    headers: {
-      Authorization: `${token_type} ${access_token}`
-    }
-  });
+  const { artists, album, name, external_urls } = item;
+  const { body: { release_date } } = await spoitfy(album.href);
 
   return {
-    artist: item.artists[0].name,
-    album: item.album.name,
-    cover64: item.album.images[0].url,
-    title: item.name,
-    year: release_date.substring(0, 4)
+    artist: artists[0].name,
+    album: album.name,
+    images: album.images[0].url,
+    title: name,
+    release_date,
+    external_urls
   };
 };
