@@ -18,6 +18,7 @@
   },
   "homepage": "https://github.com/balazs4/songinfo#readme",
   "dependencies": {
+    "debug": "^2.6.8",
     "micro": "^7.3.3",
     "request": "^2.81.0",
     "request-promise-native": "^1.0.4"
