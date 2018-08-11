@@ -64,6 +64,7 @@ module.exports = async (req, res) => {
 
   const term = req.url.replace(/\//, '');
 
+  log(`Looking for '${term}'`);
   const result = await search(term);
 
   if (result.statusCode !== 200) {
