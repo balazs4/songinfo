@@ -19,8 +19,10 @@ const getAccesToken = () => {
     return currentToken;
   }
   log('Requesting token...');
-  const { CLIENT_ID, CLIENT_SECRET } = process.env;
-  const code = new Buffer(`${CLIENT_ID}:${CLIENT_SECRET}`).toString('base64');
+  const { SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET } = process.env;
+  const code = new Buffer(
+    `${SPOTIFY_CLIENT_ID}:${SPOTIFY_CLIENT_SECRET}`
+  ).toString('base64');
   return request('https://accounts.spotify.com/api/token', {
     json: true,
     simple: false,
@@ -52,7 +54,10 @@ const spoitfy = url => {
 
 const search = term =>
   spoitfy(
-    `https://api.spotify.com/v1/search?type=track&market=DE&limit=1&q=${term.replace(/\s/g, '+')}`
+    `https://api.spotify.com/v1/search?type=track&market=DE&limit=1&q=${term.replace(
+      /\s/g,
+      '+'
+    )}`
   );
 
 module.exports = async (req, res) => {
@@ -71,7 +76,11 @@ module.exports = async (req, res) => {
     return;
   }
 
-  const { body: { tracks: { items } } } = result;
+  const {
+    body: {
+      tracks: { items }
+    }
+  } = result;
   const [item] = items;
   if (item === undefined) {
     send(res, 404, 'Not Found');
@@ -79,7 +88,9 @@ module.exports = async (req, res) => {
   }
 
   const { artists, album, name, external_urls } = item;
-  const { body: { release_date } } = await spoitfy(album.href);
+  const {
+    body: { release_date }
+  } = await spoitfy(album.href);
 
   return {
     artist: artists[0].name,
