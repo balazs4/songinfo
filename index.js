@@ -1,5 +1,6 @@
+const { URLSearchParams } = require('url');
 const { send } = require('micro');
-const request = require('request-promise-native');
+const fetch = require('node-fetch');
 const log = require('debug')('songinfo');
 
 const isTokenValid = token => {
@@ -23,33 +24,26 @@ const getAccesToken = () => {
   const code = new Buffer(
     `${SPOTIFY_CLIENT_ID}:${SPOTIFY_CLIENT_SECRET}`
   ).toString('base64');
-  return request('https://accounts.spotify.com/api/token', {
-    json: true,
-    simple: false,
-    resolveWithFullResponse: true,
+  const params = new URLSearchParams();
+  params.append('grant_type', 'client_credentials');
+  return fetch('https://accounts.spotify.com/api/token', {
     method: 'POST',
-    form: 'grant_type=client_credentials',
+    body: params,
     headers: {
       Authorization: `Basic ${code}`
     }
-  }).then(x => {
-    return x.statusCode === 200
-      ? Object.assign({}, x.body, { issued_at: Date.now() })
-      : null;
-  });
+  })
+    .then(x => x.json())
+    .then(x => ({ ...x, issued_at: Date.now() }));
 };
 
 const spoitfy = url => {
   const { token_type, access_token } = currentToken;
-  return request(url, {
-    method: 'GET',
-    json: true,
-    resolveWithFullResponse: true,
-    simple: false,
+  return fetch(url, {
     headers: {
       Authorization: `${token_type} ${access_token}`
     }
-  });
+  }).then(x => x.json());
 };
 
 const search = term =>
@@ -72,15 +66,8 @@ module.exports = async (req, res) => {
   log(`Looking for '${term}'`);
   const result = await search(term);
 
-  if (result.statusCode !== 200) {
-    send(res, 500, 'Remote server error');
-    return;
-  }
-
   const {
-    body: {
-      tracks: { items }
-    }
+    tracks: { items }
   } = result;
   const [item] = items;
   if (item === undefined) {
@@ -89,9 +76,7 @@ module.exports = async (req, res) => {
   }
 
   const { artists, album, name, external_urls } = item;
-  const {
-    body: { release_date }
-  } = await spoitfy(album.href);
+  const { release_date } = await spoitfy(album.href);
 
   return {
     artist: artists[0].name,
